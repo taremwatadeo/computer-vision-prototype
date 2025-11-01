@@ -165,6 +165,101 @@ streamlit run app.py
 streamlit run app.py --server.port $PORT --server.address 0.0.0.0
 ```
 
+## Troubleshooting Guide
+
+### Common Issues and Solutions
+
+#### API Issues
+
+1. Invalid API Key:
+
+   ```python
+   ValueError: GEMINI_API_KEY not found in environment
+   ```
+
+   - Solution: Check `.env` file exists and contains valid API key
+   - Verify key format in Google AI Studio dashboard
+
+2. API Rate Limits:
+   ```python
+   {'success': False, 'error': 'Rate limit exceeded', 'step': 'vision_detection'}
+   ```
+   - Solution: Implement exponential backoff in requests
+   - Use the provided error response structure to handle retries
+
+#### Image Processing
+
+1. Unsupported Image Format:
+
+   ```python
+   {'success': False, 'error': 'cannot identify image file'}
+   ```
+
+   - Solution: Convert image to supported format (PNG/JPEG) using PIL
+   - Example fix in `vision_detector.py`:
+     ```python
+     img = Image.open(image_path).convert('RGB')
+     ```
+
+2. Memory Issues with Large Images:
+   ```python
+   MemoryError: Cannot allocate memory for image processing
+   ```
+   - Solution: Resize large images before processing:
+     ```python
+     img.thumbnail((1600, 1600), Image.Resampling.LANCZOS)
+     ```
+
+#### Streamlit State
+
+1. Component Reinitialization:
+
+   ```python
+   KeyError: 'platform' not in session_state
+   ```
+
+   - Solution: Check initialization in `app.py`:
+     ```python
+     if 'platform' not in st.session_state:
+         st.session_state.platform = AILearningPlatform()
+     ```
+
+2. Lost Session State:
+   - Symptom: Analysis results disappear on page refresh
+   - Solution: Use proper state persistence pattern
+   - Store critical data in session state immediately
+
+### Debug Mode
+
+Enable debug logging:
+
+```python
+import logging
+logging.basicConfig(level=logging.DEBUG)
+```
+
+Use the `debug` flag in configuration:
+
+```python
+Config.DEBUG = True  # Enables detailed error messages
+```
+
+### Performance Optimization
+
+1. Cache expensive operations:
+
+   ```python
+   @st.cache_data
+   def process_image(image_file):
+       ...
+   ```
+
+2. Monitor memory usage:
+   ```python
+   import psutil
+   print(f"Memory usage: {psutil.Process().memory_info().rss / 1024 / 1024} MB")
+   ```
+
 ## Integration Points
 
 ### Gemini API Integration
